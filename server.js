@@ -1,5 +1,11 @@
 // server.js
 require('dotenv').config();
+
+if (!process.env.MONGO_URI) {
+    console.error('FATAL ERROR: MONGO_URI is not defined. Please check your .env file or environment variables.');
+    process.exit(1);
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -128,7 +134,10 @@ mongoose.connect(process.env.MONGO_URI)
           console.log("👑 Default Admin Created: admin@pcgarage.com / password123");
       }
   })
-  .catch(err => console.error("❌ MongoDB Atlas Connection Error:", err));
+  .catch(err => {
+      console.error("❌ MongoDB Atlas Connection Error:", err);
+      process.exit(1);
+  });
 
 
 // ===== Auth Middleware =====
