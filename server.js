@@ -16,6 +16,12 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
 
 // ===== Schemas =====
 const UserSchema = new mongoose.Schema({
@@ -236,19 +242,31 @@ app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
         // Status changed TO 'Completed'
         if (newStatus === 'Completed' && oldStatus !== 'Completed') {
             for (const part of newParts) {
-                partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) - part.quantity);
+                if (part && part._id && typeof part.quantity === 'number' && part.quantity > 0) {
+                    partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) - part.quantity);
+                }
             }
         } 
         // Status changed FROM 'Completed'
         else if (newStatus !== 'Completed' && oldStatus === 'Completed') {
             for (const part of oldParts) {
-                partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) + part.quantity);
+                if (part && part._id && typeof part.quantity === 'number' && part.quantity > 0) {
+                    partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) + part.quantity);
+                }
             }
         } 
         // Status REMAINS 'Completed', but parts list might have changed
         else if (newStatus === 'Completed' && oldStatus === 'Completed') {
-            oldParts.forEach(p => partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) + p.quantity));
-            newParts.forEach(p => partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) - p.quantity));
+            oldParts.forEach(p => {
+                if (p && p._id && typeof p.quantity === 'number') {
+                    partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) + p.quantity);
+                }
+            });
+            newParts.forEach(p => {
+                if (p && p._id && typeof p.quantity === 'number') {
+                    partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) - p.quantity);
+                }
+            });
         }
 
         const bulkOps = [];
@@ -290,13 +308,16 @@ app.post('/api/jobs/:id/complete', authMiddleware, async (req, res) => {
         if (job.status !== 'Completed') {
             // Deduct used parts from inventory
             if (job.parts && job.parts.length > 0) {
-                const bulkOps = job.parts.map(part => ({
-                    updateOne: {
-                        filter: { _id: part._id },
-                        update: { $inc: { stock: -part.quantity } }
-                    }
-                }));
-                await Inventory.bulkWrite(bulkOps);
+                const bulkOps = job.parts
+                    .filter(part => part && part._id && typeof part.quantity === 'number' && part.quantity > 0)
+                    .map(part => ({
+                        updateOne: {
+                            filter: { _id: part._id },
+                            update: { $inc: { stock: -part.quantity } }
+                        }
+                    }));
+                
+                if (bulkOps.length > 0) await Inventory.bulkWrite(bulkOps);
             }
 
             job.status = 'Completed';
