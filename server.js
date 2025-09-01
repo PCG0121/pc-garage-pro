@@ -1,5 +1,9 @@
 // server.js
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (e) {
+  console.error('Failed to load .env file, continuing with environment variables:', e);
+}
 
 if (!process.env.MONGO_URI) {
     console.error('FATAL ERROR: MONGO_URI is not defined. Please check your .env file or environment variables.');
