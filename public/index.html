@@ -177,8 +177,10 @@
     <script type="text/babel">
         const { useState, useEffect, createContext, useContext } = React;
         
-        const API_URL = 'https://pc-garage-pro-production.up.railway.app/api';
-
+        // Use a relative path for the API. This makes the app work seamlessly
+        // in both local development (accessing http://localhost:5000/api)
+        // and in production (accessing https://your-app.railway.app/api).
+        const API_URL = '/api';
         // --- Reusable API Hook ---
         const useApi = (endpoint, requiresAuth = true) => {
             const [data, setData] = useState([]);
@@ -844,7 +846,7 @@
         const JobModal = ({ job, onClose, onSave, customers, inventory, technicians, onSendNote }) => {
             const [formData, setFormData] = useState(job || {
                 customerName: '', customerPhone: '', customerEmail: '', deviceType: '', deviceBrand: '', deviceModel: '',
-                problemDescription: '', status: 'Pending', assignedTo: '', estimatedCost: 0, actualCost: 0, parts: []
+                problemDescription: '', status: 'Pending', assignedTo: '', laborCost: 0, actualCost: 0, parts: []
             });
             const [selectedParts, setSelectedParts] = useState(job ? job.parts || [] : []);
             const [activeTab, setActiveTab] = useState('details');
@@ -860,7 +862,7 @@
 
                 const isUpdate = !!job;
                 const title = isUpdate ? '*PC Garage Pro - Job Update*' : '*PC Garage Pro - New Job Details*';
-                const totalCost = jobData.actualCost != null ? jobData.actualCost.toFixed(2) : (jobData.estimatedCost || 0).toFixed(2);
+                const totalCost = jobData.actualCost != null ? jobData.actualCost.toFixed(2) : (jobData.laborCost || 0).toFixed(2);
                 const closingMessage = isUpdate ?
                     `Your job details have been updated. Thank you!` :
                     `We will keep you updated on the status of your repair. Thank you!`;
@@ -884,7 +886,7 @@
                     const savedJob = await onSave({
                         ...formData, 
                         parts: selectedParts,
-                        actualCost: selectedParts.reduce((total, part) => total + (part.cost * part.quantity), 0) + (parseFloat(formData.estimatedCost) || 0)
+                        actualCost: selectedParts.reduce((total, part) => total + (part.cost * part.quantity), 0) + (parseFloat(formData.laborCost) || 0)
                     }); 
 
                     if (savedJob) {
@@ -931,7 +933,7 @@
             };
             
             const totalPartsCost = selectedParts.reduce((total, part) => total + (part.cost * part.quantity), 0);
-            const totalCost = totalPartsCost + (parseFloat(formData.estimatedCost) || 0);
+            const totalCost = totalPartsCost + (parseFloat(formData.laborCost) || 0);
 
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
@@ -1095,9 +1097,9 @@
                                         <div>
                                             <label className="block text-sm font-bold mb-2">Labor Cost (Rs)</label>
                                             <input 
-                                                type="number" 
-                                                name="estimatedCost" 
-                                                value={formData.estimatedCost} 
+                                                type="number"
+                                                name="laborCost"
+                                                value={formData.laborCost}
                                                 onChange={handleChange} 
                                                 className="w-full p-2 border rounded" 
                                                 min="0" 
@@ -1112,7 +1114,7 @@
                                             </div>
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="font-medium">Labor Cost:</span>
-                                                <span>Rs{(parseFloat(formData.estimatedCost) || 0).toFixed(2)}</span>
+                                                <span>Rs{(parseFloat(formData.laborCost) || 0).toFixed(2)}</span>
                                             </div>
                                             <hr className="my-2" />
                                             <div className="flex justify-between items-center font-bold">
