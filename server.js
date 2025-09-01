@@ -244,38 +244,24 @@ app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
             );
         }
 
-        // Adjust inventory based on status change and parts list change
+        // --- Refactored Inventory Adjustment Logic ---
+        // This logic is simpler and handles all cases correctly.
+        // It calculates the net change required to move from the old state to the new state.
         const partChanges = new Map();
         const oldParts = jobBeforeUpdate.parts || [];
         const newParts = updatedJob.parts || [];
 
-        // Status changed TO 'Completed'
-        if (newStatus === 'Completed' && oldStatus !== 'Completed') {
-            for (const part of newParts) {
-                if (part && part._id && typeof part.quantity === 'number' && part.quantity > 0) {
-                    partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) - part.quantity);
-                }
-            }
-        } 
-        // Status changed FROM 'Completed'
-        else if (newStatus !== 'Completed' && oldStatus === 'Completed') {
-            for (const part of oldParts) {
-                if (part && part._id && typeof part.quantity === 'number' && part.quantity > 0) {
-                    partChanges.set(part._id.toString(), (partChanges.get(part._id.toString()) || 0) + part.quantity);
-                }
-            }
-        } 
-        // Status REMAINS 'Completed', but parts list might have changed
-        else if (newStatus === 'Completed' && oldStatus === 'Completed') {
+        // If the job was previously 'Completed', add its parts back to the virtual stock count.
+        if (oldStatus === 'Completed') {
             oldParts.forEach(p => {
-                if (p && p._id && typeof p.quantity === 'number') {
-                    partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) + p.quantity);
-                }
+                if (p && p._id && typeof p.quantity === 'number') partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) + p.quantity);
             });
+        }
+
+        // If the job is now 'Completed', subtract its parts from the virtual stock count.
+        if (newStatus === 'Completed') {
             newParts.forEach(p => {
-                if (p && p._id && typeof p.quantity === 'number') {
-                    partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) - p.quantity);
-                }
+                if (p && p._id && typeof p.quantity === 'number') partChanges.set(p._id.toString(), (partChanges.get(p._id.toString()) || 0) - p.quantity);
             });
         }
 
