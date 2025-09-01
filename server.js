@@ -28,11 +28,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
-
-
 // ===== Schemas =====
 const UserSchema = new mongoose.Schema({
     name: String,
@@ -112,6 +107,8 @@ const SettingSchema = new mongoose.Schema({
 const Setting = mongoose.model('Setting', SettingSchema);
 
 // ===== MongoDB Atlas Connection =====
+const PORT = process.env.PORT || 5000;
+
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
       console.log("✅ MongoDB Connected to Atlas");
@@ -137,12 +134,12 @@ mongoose.connect(process.env.MONGO_URI)
           await admin.save();
           console.log("👑 Default Admin Created: admin@pcgarage.com / password123");
       }
+      app.listen(PORT, () => console.log(`🚀 PC Garage Pro server running on port ${PORT}`));
   })
   .catch(err => {
       console.error("❌ MongoDB Atlas Connection Error:", err);
       process.exit(1);
   });
-
 
 // ===== Auth Middleware =====
 const authMiddleware = (req, res, next) => {
@@ -172,7 +169,7 @@ app.post('/api/register', async (req, res) => {
         res.json({ message: "User registered successfully" });
     } catch (err) {
         console.error("Registration Error:", err);
-        res.status(500).json({ message: "Error registering user", error: err.message });
+        res.status(500).json({ message: "An error occurred during registration." });
     }
 });
 
@@ -193,7 +190,7 @@ app.post('/api/login', async (req, res) => {
         res.json({ user: userWithoutPassword, token });
     } catch (err) {
         console.error("Login Error:", err);
-        res.status(500).json({ message: "Error logging in", error: err.message });
+        res.status(500).json({ message: "An error occurred during login." });
     }
 });
 
@@ -204,7 +201,7 @@ app.get('/api/jobs', authMiddleware, async (req, res) => {
         res.json(jobs);
     } catch (err) {
         console.error("Get Jobs Error:", err);
-        res.status(500).json({ message: "Error fetching jobs", error: err.message });
+        res.status(500).json({ message: "Error fetching jobs" });
     }
 });
 
@@ -222,7 +219,7 @@ app.post('/api/jobs', authMiddleware, async (req, res) => {
         res.status(201).json(job);
     } catch (err) {
         console.error("Create Job Error:", err);
-        res.status(400).json({ message: "Error creating job", error: err.message });
+        res.status(400).json({ message: "Error creating job" });
     }
 });
 
@@ -298,7 +295,7 @@ app.put('/api/jobs/:id', authMiddleware, async (req, res) => {
         res.json(updatedJob);
     } catch (err) {
         console.error("Update Job Error:", err);
-        res.status(500).json({ message: "Error updating job", error: err.message });
+        res.status(500).json({ message: "Error updating job" });
     }
 });
 
@@ -309,7 +306,7 @@ app.delete('/api/jobs/:id', authMiddleware, async (req, res) => {
         res.json({ message: "Job deleted successfully" });
     } catch (err) {
         console.error("Delete Job Error:", err);
-        res.status(500).json({ message: "Error deleting job", error: err.message });
+        res.status(500).json({ message: "Error deleting job" });
     }
 });
 
@@ -347,7 +344,7 @@ app.post('/api/jobs/:id/complete', authMiddleware, async (req, res) => {
         }
     } catch (err) {
         console.error("Complete Job Error:", err);
-        res.status(500).json({ message: "Error completing job", error: err.message });
+        res.status(500).json({ message: "Error completing job" });
     }
 });
 
@@ -357,7 +354,7 @@ app.get('/api/customers', authMiddleware, async (req, res) => {
         res.json(await Customer.find());
     } catch (err) {
         console.error("Get Customers Error:", err);
-        res.status(500).json({ message: "Error fetching customers", error: err.message });
+        res.status(500).json({ message: "Error fetching customers" });
     }
 });
 app.post('/api/customers', authMiddleware, async (req, res) => {
@@ -367,7 +364,7 @@ app.post('/api/customers', authMiddleware, async (req, res) => {
         res.status(201).json(customer);
     } catch (err) {
         console.error("Create Customer Error:", err);
-        res.status(400).json({ message: "Error creating customer", error: err.message });
+        res.status(400).json({ message: "Error creating customer" });
     }
 });
 app.put('/api/customers/:id', authMiddleware, async (req, res) => {
@@ -377,7 +374,7 @@ app.put('/api/customers/:id', authMiddleware, async (req, res) => {
         res.json(customer);
     } catch (err) {
         console.error("Update Customer Error:", err);
-        res.status(500).json({ message: "Error updating customer", error: err.message });
+        res.status(500).json({ message: "Error updating customer" });
     }
 });
 app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
@@ -387,7 +384,7 @@ app.delete('/api/customers/:id', authMiddleware, async (req, res) => {
         res.json({ message: "Customer deleted successfully" });
     } catch (err) {
         console.error("Delete Customer Error:", err);
-        res.status(500).json({ message: "Error deleting customer", error: err.message });
+        res.status(500).json({ message: "Error deleting customer" });
     }
 });
 
@@ -397,7 +394,7 @@ app.get('/api/inventory', authMiddleware, async (req, res) => {
         res.json(await Inventory.find());
     } catch (err) {
         console.error("Get Inventory Error:", err);
-        res.status(500).json({ message: "Error fetching inventory", error: err.message });
+        res.status(500).json({ message: "Error fetching inventory" });
     }
 });
 app.post('/api/inventory', authMiddleware, async (req, res) => {
@@ -407,7 +404,7 @@ app.post('/api/inventory', authMiddleware, async (req, res) => {
         res.status(201).json(item);
     } catch (err) {
         console.error("Create Inventory Error:", err);
-        res.status(400).json({ message: "Error creating inventory item", error: err.message });
+        res.status(400).json({ message: "Error creating inventory item" });
     }
 });
 app.put('/api/inventory/:id', authMiddleware, async (req, res) => {
@@ -417,7 +414,7 @@ app.put('/api/inventory/:id', authMiddleware, async (req, res) => {
         res.json(item);
     } catch (err) {
         console.error("Update Inventory Error:", err);
-        res.status(500).json({ message: "Error updating inventory item", error: err.message });
+        res.status(500).json({ message: "Error updating inventory item" });
     }
 });
 app.delete('/api/inventory/:id', authMiddleware, async (req, res) => {
@@ -427,7 +424,7 @@ app.delete('/api/inventory/:id', authMiddleware, async (req, res) => {
         res.json({ message: "Inventory item deleted successfully" });
     } catch (err) {
         console.error("Delete Inventory Error:", err);
-        res.status(500).json({ message: "Error deleting inventory item", error: err.message });
+        res.status(500).json({ message: "Error deleting inventory item" });
     }
 });
 
@@ -437,7 +434,7 @@ app.get('/api/users', authMiddleware, async (req, res) => {
         res.json(await User.find().select('-password'));
     } catch (err) {
         console.error("Get Users Error:", err);
-        res.status(500).json({ message: "Error fetching users", error: err.message });
+        res.status(500).json({ message: "Error fetching users" });
     }
 });
 app.put('/api/users/:id', authMiddleware, async (req, res) => {
@@ -451,7 +448,7 @@ app.put('/api/users/:id', authMiddleware, async (req, res) => {
         res.json(user);
     } catch (err) {
         console.error("Update User Error:", err);
-        res.status(500).json({ message: "Error updating user", error: err.message });
+        res.status(500).json({ message: "Error updating user" });
     }
 });
 app.delete('/api/users/:id', authMiddleware, async (req, res) => {
@@ -461,7 +458,7 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
         res.json({ message: "User deleted successfully" });
     } catch (err) {
         console.error("Delete User Error:", err);
-        res.status(500).json({ message: "Error deleting user", error: err.message });
+        res.status(500).json({ message: "Error deleting user" });
     }
 });
 
@@ -471,7 +468,7 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
         res.json(await Notification.find().sort({ createdAt: -1 }));
     } catch (err) {
         console.error("Get Notifications Error:", err);
-        res.status(500).json({ message: "Error fetching notifications", error: err.message });
+        res.status(500).json({ message: "Error fetching notifications" });
     }
 });
 
@@ -490,7 +487,7 @@ app.get('/api/dashboard/stats', authMiddleware, async (req, res) => {
         });
     } catch (err) {
         console.error("Get Dashboard Stats Error:", err);
-        res.status(500).json({ message: "Error fetching dashboard stats", error: err.message });
+        res.status(500).json({ message: "Error fetching dashboard stats" });
     }
 });
 
@@ -501,7 +498,7 @@ app.get('/api/jobs/chart/status', authMiddleware, async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error("Get Chart Status Error:", err);
-        res.status(500).json({ message: "Error fetching chart data", error: err.message });
+        res.status(500).json({ message: "Error fetching chart data" });
     }
 });
 
@@ -515,7 +512,7 @@ app.get('/api/jobs/chart/revenue', authMiddleware, async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error("Get Chart Revenue Error:", err);
-        res.status(500).json({ message: "Error fetching chart data", error: err.message });
+        res.status(500).json({ message: "Error fetching chart data" });
     }
 });
 
@@ -605,7 +602,7 @@ app.get('/api/settings/backup', authMiddleware, async (req, res) => {
         const settings = await getBackupSettings();
         res.json(settings);
     } catch (err) {
-        res.status(500).json({ message: 'Error fetching settings', error: err.message });
+        res.status(500).json({ message: 'Error fetching settings' });
     }
 });
 
@@ -617,7 +614,7 @@ app.put('/api/settings/backup', authMiddleware, async (req, res) => {
         await scheduleBackup();
         res.json({ message: 'Settings updated successfully' });
     } catch (err) {
-        res.status(500).json({ message: 'Error updating settings', error: err.message });
+        res.status(500).json({ message: 'Error updating settings' });
     }
 });
 
@@ -628,7 +625,7 @@ app.post('/api/backup/now', authMiddleware, async (req, res) => {
         else res.status(500).json({ message: result.message });
     } catch (err) {
         console.error("Manual Backup Error:", err);
-        res.status(500).json({ message: 'Error performing backup', error: err.message });
+        res.status(500).json({ message: 'Error performing backup' });
     }
 });
 
@@ -655,7 +652,7 @@ app.post('/api/backup/restore', authMiddleware, upload.single('backupFile'), (re
         });
     } catch (err) {
         console.error("Restore API Error:", err);
-        res.status(500).json({ message: 'Error restoring database', error: err.message });
+        res.status(500).json({ message: 'Error restoring database' });
     }
 });
 
@@ -671,5 +668,3 @@ const createNotification = async (title, message, type = 'info') => {
 };
 
 // ===== Start Server =====
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 PC Garage Pro server running on port ${PORT}`));

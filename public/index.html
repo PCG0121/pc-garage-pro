@@ -2436,9 +2436,10 @@
                     if (result.error) {
                         setError(result.error);
                     } else {
-                        // Use a full page navigation to ensure all state is re-initialized correctly.
-                        // This is more robust than changing the hash.
-                        window.location.href = '/#/dashboard';
+                        // The AuthProvider has updated the user state.
+                        // Changing the hash will trigger the listener in the App component
+                        // to render the dashboard without a full page reload.
+                        window.location.hash = '#/dashboard';
                     }
                 } else {
                     if (password !== confirmPassword) {
